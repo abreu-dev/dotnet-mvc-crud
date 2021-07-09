@@ -1,44 +1,46 @@
 ﻿using BulkyBook.DataAccess.Data;
-using BulkyBook.DataAccess.Repositories.Interfaces;
+using BulkyBook.DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 
-namespace BulkyBook.DataAccess.Repositories.Implementations
+namespace BulkyBook.DataAccess.Repository
 {
-    public abstract class Repository<T> : IRepository<T> where T : class
+    public class Repository<T> : IRepository<T> where T : class
     {
-        private readonly ApplicationDbContext _applicationDbContext;
-        internal DbSet<T> _dbSet;
 
-        protected Repository(ApplicationDbContext applicationDbContext)
+        private readonly ApplicationDbContext _db;
+        internal DbSet<T> dbSet;
+
+        public Repository(ApplicationDbContext db)
         {
-            _applicationDbContext = applicationDbContext;
-            _dbSet = _applicationDbContext.Set<T>();
+            _db = db;
+            this.dbSet = _db.Set<T>();
         }
 
         public void Add(T entity)
         {
-            _dbSet.Add(entity);
+            dbSet.Add(entity);
         }
 
         public T Get(int id)
         {
-            return _dbSet.Find(id);
+            return dbSet.Find(id);
         }
 
         public IEnumerable<T> GetAll(Expression<Func<T, bool>> filter = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, string includeProperties = null)
         {
-            IQueryable<T> query = _dbSet;
+            IQueryable<T> query = dbSet;
 
-            if (filter != null)
+            if(filter != null)
             {
                 query = query.Where(filter);
             }
 
-            if (includeProperties != null)
+            if(includeProperties != null)
             {
                 foreach (var includeProp in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
@@ -50,13 +52,12 @@ namespace BulkyBook.DataAccess.Repositories.Implementations
             {
                 return orderBy(query).ToList();
             }
-
             return query.ToList();
         }
 
         public T GetFirstOrDefault(Expression<Func<T, bool>> filter = null, string includeProperties = null)
         {
-            IQueryable<T> query = _dbSet;
+            IQueryable<T> query = dbSet;
 
             if (filter != null)
             {
@@ -71,22 +72,24 @@ namespace BulkyBook.DataAccess.Repositories.Implementations
                 }
             }
 
+            
             return query.FirstOrDefault();
         }
 
         public void Remove(int id)
         {
-            Remove(_dbSet.Find(id));
+            T entity = dbSet.Find(id);
+            Remove(entity);
         }
 
         public void Remove(T entity)
         {
-            _dbSet.Remove(entity);
+            dbSet.Remove(entity);
         }
 
-        public void RemoveRange(IEnumerable<T> entities)
+        public void RemoveRange(IEnumerable<T> entity)
         {
-            _dbSet.RemoveRange(entities);
+            dbSet.RemoveRange(entity);
         }
     }
 }
